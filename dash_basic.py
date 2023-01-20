@@ -32,6 +32,10 @@ def get_data_sql():
     df = pd.read_sql(query, conn)
     return df
 
+def get_data_full():
+    df = pd.read_csv(f'data/Cars93.csv')
+    return df
+
 def get_data_sample():
     i = random.randint(0,2)
     df = pd.read_csv(f'data/sample-{i}')
@@ -53,7 +57,19 @@ def make_figure_1():
                 df2, 
                 x='Weight', 
                 y='MPG.city', 
-                title='My first plot'
+                title='My first plot',
+    )
+    return fig
+
+def make_figure_2(opacity=0.2):
+    df = get_data_full()
+    df2 = trim_cols(df)
+    fig = px.scatter(
+                df2, 
+                x='Weight', 
+                y='MPG.city', 
+                title=f'Second Plot with opacity of {opacity}',
+                opacity=opacity,
     )
     return fig
 
@@ -74,12 +90,18 @@ app.layout = html.Div(children=[
         id='interval-component',
         interval=5*1000, # in milliseconds
         n_intervals=0
-    )
+    ),
+    
+    dcc.Input(
+        value="0.2",
+        id='opacity-input',
+        
+    ),
 
-    # dcc.Graph(
-    #         id='example-graph',
-    #         figure=fig2
-    # )
+    dcc.Graph(
+            id='fig-2',
+            figure=make_figure_2()
+    ),
 ])
 
 @app.callback(
@@ -88,6 +110,20 @@ app.layout = html.Div(children=[
 )
 def update_figure_1(n_intervals=None):
     return make_figure_1()
+
+@app.callback(
+    Output('fig-2', 'figure'),
+    Input('opacity-input', 'value')
+)
+def update_opactiy(opacity_value):
+    try:
+        opacity_float = float(opacity_value)
+    except:
+        opacity_float = 1.0
+    if (opacity_float > 1.0) or (opacity_float < 0.0):
+        opacity_float = 1.0
+    
+    return make_figure_2(opacity_float)
 
 
 if __name__ == '__main__':
