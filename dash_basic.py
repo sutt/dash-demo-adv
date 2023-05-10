@@ -12,119 +12,54 @@ import pymssql
 
 # for later iterations:
 # import pymssql
-
 from config import database
 from config import table
 from config import username
 from config import password
 from config import server
 
-import random
-from dash.dependencies import Input, Output
-
 
 app = dash.Dash(__name__)
 
-def get_data_sql():
-    conn = pymssql.connect(server,username, password, database)
-    cursor = conn.cursor()
-    query = f"SELECT * FROM {table}"
-    df = pd.read_sql(query, conn)
-    return df
+# df = pd.read_csv('data/Cars93.csv')
 
-def get_data_full():
-    df = pd.read_csv(f'data/Cars93.csv')
-    return df
+conn = pymssql.connect(server,username, password, database)
+query = f"SELECT * FROM {table}"
+df = pd.read_sql(query, conn)
+print(df.columns)
+df2 = df[['Weight', 'MPG_city', 'MPG_highway']]
+df2['MPG.city'] = df2['MPG_city']
+df2['MPG.highway'] = df2['MPG_highway']
+df2['chart_color'] = 'orange'
+print(df2.shape)
+print("========================")
+print(df2.head(3))
 
-def get_data_sample():
-    i = random.randint(0,2)
-    df = pd.read_csv(f'data/sample-{i}')
-    print(i)
-    return df
+fig = px.scatter(df2, x='Weight', y='MPG.city', title='MPG (city) vs Weight', 
+                 color='chart_color')
+fig2 = px.scatter(df2, x='Weight', y='MPG.highway', title='MPG (highway) vs Weight')
 
-def trim_cols(df):
-    cols = ['Weight', 'MPG.city', 'MPG.highway']
-    for col in cols:
-        df[col] = df[col].astype('int')
-    df2 = df[['Weight', 'MPG.city', 'MPG.highway']]
-    return df2
-
-
-def make_figure_1():
-    df = get_data_sample()
-    df2 = trim_cols(df)
-    fig = px.scatter(
-                df2, 
-                x='Weight', 
-                y='MPG.city', 
-                title='My first plot',
-    )
-    return fig
-
-def make_figure_2(opacity=0.2):
-    df = get_data_full()
-    df2 = trim_cols(df)
-    fig = px.scatter(
-                df2, 
-                x='Weight', 
-                y='MPG.city', 
-                title=f'Second Plot with opacity of {opacity}',
-                opacity=opacity,
-    )
-    return fig
-
-# put figures into dashboard's html
 app.layout = html.Div(children=[
-    html.H1(children='Hello Dash. Wills Dashboard!.'),
+    html.H1(children='Hello Group2!'),
+    html.H3(children="I'm an H3!"),
+    html.H6(children="New thing"),
 
     html.Div(children='''
         Dash: A web application framework for your data.
     '''),
-
-    dcc.Graph(
-        id='fig-1',
-        figure=make_figure_1()
-    ),
-
-    dcc.Interval(
-        id='interval-component',
-        interval=5*1000, # in milliseconds
-        n_intervals=0
-    ),
     
-    dcc.Input(
-        value="0.2",
-        id='opacity-input',
-        
+    dcc.Graph(
+        id='first-graph',
+        figure=fig
     ),
 
     dcc.Graph(
-            id='fig-2',
-            figure=make_figure_2()
-    ),
+            id='example-graph',
+            figure=fig2
+    )
 ])
-
-@app.callback(
-    Output('fig-1', 'figure'),
-    Input('interval-component', 'n_intervals')
-)
-def update_figure_1(n_intervals=None):
-    return make_figure_1()
-
-@app.callback(
-    Output('fig-2', 'figure'),
-    Input('opacity-input', 'value')
-)
-def update_opactiy(opacity_value):
-    try:
-        opacity_float = float(opacity_value)
-    except:
-        opacity_float = 1.0
-    if (opacity_float > 1.0) or (opacity_float < 0.0):
-        opacity_float = 1.0
-    
-    return make_figure_2(opacity_float)
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True )
+    app.run_server(debug=True)
+
